@@ -257,14 +257,47 @@ int com_write_tag_unlocked(char* arg) {
     return -1;
   }
 
-  unsigned char result = 0;
-  for (int i = 0; i < 4; i++) {
-     result ^= current_tag.amb[0].mbm.abtUID[i];
-  }
-  if (result != current_tag.amb[0].mbm.btBCC) {
-    printf("Invalid BCC: not writing to avoid brick of tag");
-    return -1;
-  }
+    unsigned char result = 0;
+    for (int i = 0; i < 4; i++) {
+        result ^= current_tag.amb[0].mbm.abtUID[i];
+    }
+
+    if (result != current_tag.amb[0].mbm.btBCC) {
+        printf("Invalid BCC: not writing to avoid brick of tag\n");
+        return -1;
+    }
+
+    int allZero = true;
+    for (int i = 0; i < 4; i++) {
+        if (current_tag.amb[0].mbm.abtUID[i] != 0) {
+            allZero = false;
+        }
+    }
+
+    if (current_tag.amb[0].mbm.btBCC != 0) {
+        allZero = false;
+    }
+
+    for (int i = 0; i < 2; i++) {
+        if (current_tag.amb[0].mbm.abtATQA[i] != 0) {
+            allZero = false;
+        }
+    }
+
+    for (int i = 0; i < 8; i++) {
+        if (current_tag.amb[0].mbm.abtUnknown[i] != 0) {
+            allZero = false;
+        }
+    }
+
+    if (current_tag.amb[0].mbm.btUnknown != 0) {
+        allZero = false;
+    }
+    if (allZero) {
+        printf("Block 0 is all zeros: not writing\n");
+        return -1;
+    }
+
   // Issue the write request
   mf_write_tag(&current_tag, MF_KEY_UNLOCKED);
   return 0;
